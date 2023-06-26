@@ -13,20 +13,26 @@ namespace BotGeoGuessrTests.GeoGuessr.States
         private readonly Mock<ILogger> _mockLogger = new();
 
         [Fact]
-        public async Task Execute_ShouldCallGetoken()
+        public async Task Execute_ShouldLogin()
         {
+            _mockSeleniumService
+                .Setup(s => s.Login());
+
             InitState state = new(_mockContext.Object, _mockSeleniumService.Object, _mockLogger.Object);
             await state.Execute();
-
-            //_mockGeoGuessrService.Verify(s => s.GetTokenAsync(), Times.Once);
+            
+            _mockSeleniumService.Verify(s => s.Login(), Times.Once);
         }
 
         [Fact]
-        public async Task Execute_ShouldSetNewState()
+        public async Task Execute_ShoulSetNextState()
         {
+            _mockContext
+                .Setup(s => s.SetCurrentState(It.IsAny<CreateState>()));
+
             InitState state = new(_mockContext.Object, _mockSeleniumService.Object, _mockLogger.Object);
             await state.Execute();
-
+            
             _mockContext.Verify(s => s.SetCurrentState(It.IsAny<CreateState>()), Times.Once);
         }
     }
