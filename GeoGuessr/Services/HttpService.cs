@@ -1,5 +1,8 @@
 ﻿using System.Net.Http.Headers;
 using BotGeoGuessr.GeoGuessr.Models;
+using BotGeoGuessr.Validators;
+using FluentValidation;
+using FluentValidation.Results;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -11,7 +14,6 @@ namespace BotGeoGuessr.GeoGuessr.Services
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
 
-        private string _lobbyId = string.Empty;
         public HttpService(HttpClient httpClient, ILogger logger)
         {
             _logger = logger;
@@ -22,11 +24,13 @@ namespace BotGeoGuessr.GeoGuessr.Services
         {
             _logger.Information("{Class}.{Function}", nameof(HttpService), nameof(GetPresentUser));
             
+            if (string.IsNullOrWhiteSpace(ncfaCookie) || string.IsNullOrWhiteSpace(buildId))
+                throw new ArgumentException("wrong arguments");
+            
             _httpClient.DefaultRequestHeaders.Clear();
             BuildHttpClient(ncfaCookie);
             
             dynamic gameInfos = await GetInfos(buildId);
-            _lobbyId = gameInfos.pageProps.party.lobbyId;
             
             return CountUserPresent(gameInfos.pageProps.initialMemberInfo.members);
         }
@@ -34,6 +38,11 @@ namespace BotGeoGuessr.GeoGuessr.Services
         public async Task UpdateSettings(string ncfaCookie, GameSettings settings)
         {
             _logger.Information("{Class}.{Function}", nameof(HttpService), nameof(UpdateSettings));
+
+            IValidator<GameSettings> validator = new GameSettingsValidator();
+            ValidationResult result = await validator.ValidateAsync(settings);
+            if (!result.IsValid || string.IsNullOrWhiteSpace(ncfaCookie))
+                throw new ArgumentException("wrong arguments");
             
             _httpClient.DefaultRequestHeaders.Clear();
             BuildHttpClient(ncfaCookie);
@@ -44,6 +53,9 @@ namespace BotGeoGuessr.GeoGuessr.Services
         {
             const string MAPS_URL = "https://www.geoguessr.com/api/v3/social/maps/browse/popular/official?count=25&page=0";
             _logger.Information("{Class}.{Function}", nameof(HttpService), nameof(GetMaps));
+            
+            if (string.IsNullOrWhiteSpace(ncfaCookie))
+                throw new ArgumentException("wrong arguments");
             
             _httpClient.DefaultRequestHeaders.Clear();
             BuildHttpClient(ncfaCookie);
@@ -121,23 +133,6 @@ namespace BotGeoGuessr.GeoGuessr.Services
                 throw new ApplicationException(response.StatusCode.ToString());
 
             return await response.Content.ReadAsStringAsync();
-        }
-
-        public async Task GuessAsync(int round)
-        {
-            _logger.Information("{Class}.{Function} : Sending Guess", nameof(HttpService), nameof(GuessAsync));
-         
-            string guessUrl = $"https://game-server.geoguessr.com/api/live-challenge/{_lobbyId}/guess";
-            
-            await SendAsync(guessUrl, HttpMethod.Post, JsonConvert.SerializeObject(new
-            {
-                lat = 10.213,
-                lng = 10.213,
-                roundNumber = round,
-            }));
-            
-            string resultUrl = $"https://game-server.geoguessr.com/api/live-challenge/{_lobbyId}/leaderboard-position/1";
-            await SendAsync(resultUrl, HttpMethod.Get, string.Empty);
         }
     } 
 }

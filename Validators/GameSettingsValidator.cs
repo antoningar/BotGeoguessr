@@ -7,6 +7,9 @@ namespace BotGeoGuessr.Validators
     {
         public GameSettingsValidator()
         {
+            RuleFor(x => x.Map)
+                .NotEmpty()
+                .WithMessage("Parametre map vide.");
             RuleFor(x => x.Duration)
                 .InclusiveBetween(10, 600)
                 .Must(d => d % 10 == 0)
