@@ -27,10 +27,15 @@ public class SeleniumService : ISeleniumService
         _httpService = httpService;
         _configuration = configuration;
 
+        string binaryLocation = _configuration.GetSection("DRIVER_PATH").Value! + "chromedriver.exe";
+        
         ChromeOptions options = new();
         options.AddArgument("--headless");
+        options.AddArgument("--disable-dev-shm-usage");
+        options.AddArgument("--no-sandbox");
+        options.BinaryLocation = binaryLocation;
 
-        _webDriver = new ChromeDriver(options);
+        _webDriver = new ChromeDriver(binaryLocation, options);
         _wait = new WebDriverWait(_webDriver, TimeSpan.FromSeconds(5));
     }
 
