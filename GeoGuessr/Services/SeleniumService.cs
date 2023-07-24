@@ -1,36 +1,56 @@
 using BotGeoGuessr.GeoGuessr.Models;
-using Microsoft.Extensions.Configuration;
+using BotGeoGuessr.GeoGuessr.Options;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
+using OpenQA.Selenium.Remote;
 using OpenQA.Selenium.Support.UI;
 using Serilog;
 
 namespace BotGeoGuessr.GeoGuessr.Services;
 
-public class SeleniumService : ISeleniumService
+public sealed class SeleniumService : ISeleniumService
 {
     private const int ROUND_DELAY = 10000;
     
     private readonly ILogger _logger;
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<GeoguessrOptions> _geoguessrOptions;
     private readonly IHttpService _httpService;
     
     private readonly IWebDriver _webDriver;
 
     private readonly WebDriverWait _wait;
 
-    public SeleniumService(ILogger logger, IHttpService httpService, IConfiguration configuration)
+    public SeleniumService(ILogger logger, IHttpService httpService, IOptions<GeoguessrOptions> geoguessrOptions, IOptions<SeleniumServerOptions> seleniumServerOptions)
     {
         _logger = logger;
         _httpService = httpService;
-        _configuration = configuration;
+        _geoguessrOptions = geoguessrOptions;
 
         ChromeOptions options = new();
+        options.AddArgument("--disable-background-timer-throttling");
+        options.AddArgument("--disable-backgrounding-occluded-windows");
+        options.AddArgument("--disable-breakpad");
+        options.AddArgument("--disable-component-extensions-with-background-pages");
+        options.AddArgument("--disable-dev-shm-usage");
+        options.AddArgument("--disable-extensions");
+        options.AddArgument("--disable-features=TranslateUI,BlinkGenPropertyTrees");
+        options.AddArgument("--disable-ipc-flooding-protection");
+        options.AddArgument("--disable-renderer-backgrounding");
+        options.AddArgument("--enable-features=NetworkService,NetworkServiceInProcess");
+        options.AddArgument("--force-color-profile=srgb");
+        options.AddArgument("--hide-scrollbars");
+        options.AddArgument("--metrics-recording-only");
+        options.AddArgument("--mute-audio");
         options.AddArgument("--headless");
+        options.AddArgument("--no-sandbox");
+        options.AddArgument("--window-size=1440,980");
 
-        _webDriver = new ChromeDriver(options);
+        _webDriver = new RemoteWebDriver(
+            new Uri(seleniumServerOptions.Value.Url!), options.ToCapabilities());
+        
         _wait = new WebDriverWait(_webDriver, TimeSpan.FromSeconds(5));
     }
 
@@ -38,7 +58,14 @@ public class SeleniumService : ISeleniumService
     {
         _logger.Information("{Class}.{Method}", nameof(SeleniumService), nameof(Login));
         GotToLoginPage();
-        AcceptCookies();
+        try
+        {
+            AcceptCookies();
+        }
+        catch (NoSuchElementException e)
+        {
+            _logger.Information("{Class}.{Method}: No cookies popup found", nameof(SeleniumService), nameof(Login));
+        }
         LoginForm();
     }
 
@@ -46,6 +73,14 @@ public class SeleniumService : ISeleniumService
     {
         _logger.Information("{Class}.{Method}", nameof(SeleniumService), nameof(GetJoinCode));
         GoToPartyPage();
+        try
+        {
+            AcceptCookies();
+        }
+        catch (NoSuchElementException e)
+        {
+            _logger.Information("{Class}.{Method}: No cookies popup found", nameof(SeleniumService), nameof(Login));
+        }
         string url =  GetGameUrl();
         new Actions(_webDriver).SendKeys(Keys.Escape).Perform();
         return url;
@@ -224,7 +259,8 @@ public class SeleniumService : ISeleniumService
         }
         
         IWebElement div = span.FindElement(By.XPath("./.."));
-        div.Click();
+        new Actions(_webDriver).MoveToElement(div).Click(div).Perform();
+
         IWebElement link = _webDriver.FindElement(By.XPath("//input[@data-qa='copy-party-link']"));
         return link.GetAttribute("value");
     }
@@ -232,24 +268,18 @@ public class SeleniumService : ISeleniumService
 
     private void LoginForm()
     {
-        const string EMAIL_KEY = "GEOGUESSR_EMAIL";
-        const string PASSWORD_KEY = "GEOGUESSR_PASSWORD";
-        
-        string email = _configuration.GetSection(EMAIL_KEY).Value!;
-        string password = _configuration.GetSection(PASSWORD_KEY).Value!;
-        
         IWebElement emailField = _webDriver.FindElement(By.XPath("//input[@data-qa='email-field']"));
         IWebElement passwordField = _webDriver.FindElement(By.XPath("//input[@data-qa='password-field']"));
 
-        emailField.SendKeys(email);
-        passwordField.SendKeys(password);
+        emailField.SendKeys(_geoguessrOptions.Value.Email!);
+        passwordField.SendKeys(_geoguessrOptions.Value.Password!);
         passwordField.Submit();
     }
 
     private void AcceptCookies()
     {
         _logger.Information("{Class}.{Method} : Accepting cookies", nameof(SeleniumService), nameof(AcceptCookies));
-        IWebElement btn = _webDriver.FindElement(By.Id("accept-choices"));
+        IWebElement btn = _webDriver.FindElement(By.Id("onetrust-accept-btn-handler"));
         btn.Click();
     }
 
@@ -271,5 +301,11 @@ public class SeleniumService : ISeleniumService
         _logger.Information("{Class}.{Method} : Go to party page", nameof(SeleniumService), nameof(GoToPartyPage));
         const string PARTY_URL = "https://www.geoguessr.com/party";
         _webDriver.Navigate().GoToUrl(PARTY_URL);
+    }
+
+    ~SeleniumService()
+    {
+        _logger.Information("{Class}.Destructor", nameof(SeleniumService));
+        _webDriver.Dispose();
     }
 }

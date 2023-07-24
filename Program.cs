@@ -1,5 +1,6 @@
 ﻿using BotGeoGuessr.GeoGuessr;
 using BotGeoGuessr.GeoGuessr.Models;
+using BotGeoGuessr.GeoGuessr.Options;
 using BotGeoGuessr.GeoGuessr.Services;
 using BotGeoGuessr.Services;
 using BotGeoGuessr.Validators;
@@ -16,7 +17,7 @@ namespace BotGeoGuessr
 {
     internal static class Program
     {
-        private const string TOKEN_KEY = "TOKEN";
+        private const string TOKEN_KEY = "DISCORD_TOKEN";
 
         private static void Main(string[] args)
             => MainAsync().GetAwaiter().GetResult();
@@ -46,22 +47,26 @@ namespace BotGeoGuessr
         }
         private static ServiceProvider ConfigureServices(IConfiguration configuration, ILogger log)
         {
+            const string SELENIUMSERVER_KEY = "SELENIUMSERVER_OPTIONS";
+            const string GEOGUESSR_KEY = "GEOGUESSR_OPTIONS";
             return new ServiceCollection()
-            .AddSingleton(new DiscordSocketConfig
-            {
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
-            })
-            .AddSingleton<ISeleniumService, SeleniumService>()
-            .AddSingleton<IGeoGuessrContext, GeoGuessrContext>()
-            .AddSingleton<IHttpService, HttpService>()
-            .AddSingleton<DiscordSocketClient>()
-            .AddSingleton<CommandService>()
-            .AddSingleton<IValidator<GameSettings>, GameSettingsValidator>()
-            .AddSingleton<BotService>()
-            .AddSingleton<HttpClient>()
-            .AddSingleton(_ => configuration)
-            .AddSingleton(_ => log)
-            .BuildServiceProvider();
+                .Configure<SeleniumServerOptions>(configuration.GetSection(SELENIUMSERVER_KEY))
+                .Configure<GeoguessrOptions>(configuration.GetSection(GEOGUESSR_KEY))
+                .AddSingleton(new DiscordSocketConfig
+                {
+                    GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+                })
+                .AddSingleton<ISeleniumService, SeleniumService>()
+                .AddSingleton<IGeoGuessrContext, GeoGuessrContext>()
+                .AddSingleton<IHttpService, HttpService>()
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<CommandService>()
+                .AddSingleton<IValidator<GameSettings>, GameSettingsValidator>()
+                .AddSingleton<BotService>()
+                .AddSingleton<HttpClient>()
+                .AddSingleton(_ => configuration)
+                .AddSingleton(_ => log)
+                .BuildServiceProvider();
         }
 
         private static Task LogAsync(LogMessage log)
