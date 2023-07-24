@@ -62,7 +62,7 @@ public sealed class SeleniumService : ISeleniumService
         {
             AcceptCookies();
         }
-        catch (NoSuchElementException e)
+        catch (NoSuchElementException)
         {
             _logger.Information("{Class}.{Method}: No cookies popup found", nameof(SeleniumService), nameof(Login));
         }
@@ -77,7 +77,7 @@ public sealed class SeleniumService : ISeleniumService
         {
             AcceptCookies();
         }
-        catch (NoSuchElementException e)
+        catch (NoSuchElementException)
         {
             _logger.Information("{Class}.{Method}: No cookies popup found", nameof(SeleniumService), nameof(Login));
         }
@@ -239,6 +239,8 @@ public sealed class SeleniumService : ISeleniumService
 
     private string GetNcfaCookie()
     {
+        _logger.Debug("{Class}.{Method} : Looking for ncfa cookie in cookies {Cookies}",
+            nameof(SeleniumService), nameof(GotToLoginPage), _webDriver.Manage().Cookies);
         return _webDriver.Manage().Cookies.GetCookieNamed("_ncfa").ToString();
     }
 
