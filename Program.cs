@@ -47,10 +47,10 @@ namespace BotGeoGuessr
         }
         private static ServiceProvider ConfigureServices(IConfiguration configuration, ILogger log)
         {
-            const string BROWSWERLESS_KEY = "BROWSERLESS_OPTIONS";
+            const string SELENIUMSERVER_KEY = "SELENIUMSERVER_OPTIONS";
             const string GEOGUESSR_KEY = "GEOGUESSR_OPTIONS";
             return new ServiceCollection()
-                .Configure<BrowserlessOptions>(configuration.GetSection(BROWSWERLESS_KEY))
+                .Configure<SeleniumServerOptions>(configuration.GetSection(SELENIUMSERVER_KEY))
                 .Configure<GeoguessrOptions>(configuration.GetSection(GEOGUESSR_KEY))
                 .AddSingleton(new DiscordSocketConfig
                 {
