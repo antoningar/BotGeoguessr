@@ -11,10 +11,9 @@ using Serilog;
 
 namespace BotGeoGuessr.GeoGuessr.Services;
 
-public sealed class SeleniumService : ISeleniumService, IDisposable
+public sealed class SeleniumService : ISeleniumService
 {
     private const int ROUND_DELAY = 10000;
-    private const string BROWSERLESS_TOKEN_KEY = "BROWSERLESS_TOKEN";
     
     private readonly ILogger _logger;
     private readonly IOptions<GeoguessrOptions> _geoguessrOptions;
@@ -24,7 +23,7 @@ public sealed class SeleniumService : ISeleniumService, IDisposable
 
     private readonly WebDriverWait _wait;
 
-    public SeleniumService(ILogger logger, IHttpService httpService, IOptions<GeoguessrOptions> geoguessrOptions, IOptions<BrowserlessOptions> browswerlessOptions)
+    public SeleniumService(ILogger logger, IHttpService httpService, IOptions<GeoguessrOptions> geoguessrOptions, IOptions<SeleniumServerOptions> seleniumServerOptions)
     {
         _logger = logger;
         _httpService = httpService;
@@ -48,15 +47,9 @@ public sealed class SeleniumService : ISeleniumService, IDisposable
         options.AddArgument("--headless");
         options.AddArgument("--no-sandbox");
         options.AddArgument("--window-size=1440,980");
-        
-        options.AddAdditionalOption("browserless:token", browswerlessOptions.Value.Token);
-        options.AddAdditionalOption("browserless:timeout", browswerlessOptions.Value.Timeout);
-        options.AddAdditionalOption("browserless:stealth", browswerlessOptions.Value.Stealth);
-        options.AddAdditionalOption("browserless:blockAds", browswerlessOptions.Value.BlockAds);
-        options.AddAdditionalOption("browserless:trackingId", browswerlessOptions.Value.TrackingId);
 
         _webDriver = new RemoteWebDriver(
-            new Uri(browswerlessOptions.Value.Url!), options.ToCapabilities());
+            new Uri(seleniumServerOptions.Value.Url!), options.ToCapabilities());
         
         _wait = new WebDriverWait(_webDriver, TimeSpan.FromSeconds(5));
     }
@@ -310,18 +303,9 @@ public sealed class SeleniumService : ISeleniumService, IDisposable
         _webDriver.Navigate().GoToUrl(PARTY_URL);
     }
 
-    public void Dispose()
+    ~SeleniumService()
     {
-        _logger.Information("{Class}.{Method}", nameof(SeleniumService), nameof(Dispose));
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    private void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _webDriver.Quit();
-        }
+        _logger.Information("{Class}.Destructor", nameof(SeleniumService));
+        _webDriver.Dispose();
     }
 }
