@@ -146,6 +146,7 @@ public sealed class SeleniumService : ISeleniumService
 
     private void EndGame()
     {
+        _logger.Information("{Class}.{Method} : Ending game", nameof(SeleniumService), nameof(EndGame));
         IWebElement spanFinish = _wait.Until(e => e.FindElement(By.XPath("//span[text()='Finish game']")));
         IWebElement btnFinish = spanFinish.FindElement(By.XPath("./.."));
         btnFinish.Click();
@@ -157,6 +158,7 @@ public sealed class SeleniumService : ISeleniumService
 
     private void ManageRounds(int userPresent)
     {
+        _logger.Information("{Class}.{Method} : Starting rounds management", nameof(SeleniumService), nameof(ManageRounds));
         const int MAX_ROUND = 5;
         int round = 1;
         do
@@ -190,6 +192,7 @@ public sealed class SeleniumService : ISeleniumService
 
     private void ValidGuess()
     {
+        _logger.Information("{Class}.{Method} : Validating guess", nameof(SeleniumService), nameof(ValidGuess));
         IWebElement span = _wait.Until(e => e.FindElement(By.XPath("//span[text()='Guess']")));
         IWebElement btn = span.FindElement(By.XPath("./.."));
         btn.Click();
@@ -197,6 +200,7 @@ public sealed class SeleniumService : ISeleniumService
 
     private void Guess()
     {
+        _logger.Information("{Class}.{Method} : Guessing", nameof(SeleniumService), nameof(Guess));
         IWebElement map = _webDriver.FindElement(By.XPath("//div[@data-qa='guess-map-canvas']"));
         new Actions(_webDriver)
             .MoveToElement(map)
@@ -206,6 +210,7 @@ public sealed class SeleniumService : ISeleniumService
 
     private void StartNextRound()
     {
+        _logger.Information("{Class}.{Method} : Starting next round", nameof(SeleniumService), nameof(StartNextRound));
         IWebElement span = _wait.Until(e => e.FindElement(By.XPath("//span[text()='Start next round']")));
         IWebElement btn = span.FindElement(By.XPath("./.."));
         btn.Click();
@@ -213,6 +218,7 @@ public sealed class SeleniumService : ISeleniumService
 
     private void WaitForAllGuesses(int guessRequired)
     {
+        _logger.Information("{Class}.{Method} : Waiting for guesses", nameof(SeleniumService), nameof(WaitForAllGuesses));
         int guesses;
         do
         {
@@ -292,6 +298,7 @@ public sealed class SeleniumService : ISeleniumService
 
     private void ClickStartGame()
     {
+        _logger.Information("{Class}.{Method} : Click on starting game", nameof(SeleniumService), nameof(ClickStartGame));
         IWebElement btn = _webDriver.FindElement(By.XPath("//button[@data-qa='party-start-game-button']"));
         btn?.Click();
     }
