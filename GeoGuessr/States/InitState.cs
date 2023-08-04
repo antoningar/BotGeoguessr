@@ -9,6 +9,7 @@ namespace BotGeoGuessr.GeoGuessr.States
         public InitState(IGeoGuessrContext context, ISeleniumService seleniumService, ILogger logger) : base(context, seleniumService, logger)
         {
             Status = StatusLabels.INIT_STATUS;
+            Logger.Debug("{Class}.{Function} : state set to {Status}", nameof(InitState), nameof(InitState), Status);
         }
 
         public override async Task Execute()

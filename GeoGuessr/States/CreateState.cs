@@ -8,6 +8,7 @@ namespace BotGeoGuessr.GeoGuessr.States
         public CreateState(IGeoGuessrContext context, ISeleniumService seleniumService, ILogger logger) : base(context, seleniumService, logger)
         {
             Status = "CREATE";
+            Logger.Debug("{Class}.{Function} : state set to {Status}", nameof(CreateState), nameof(CreateState), Status);
         }
 
         public override async Task Execute()
