@@ -241,12 +241,13 @@ public sealed class SeleniumService : ISeleniumService
     {
         _logger.Debug("{Class}.{Method} : Looking for ncfa cookie in cookies {Cookies}",
             nameof(SeleniumService), nameof(GotToLoginPage), _webDriver.Manage().Cookies);
-        string cookie =  _webDriver.Manage().Cookies.GetCookieNamed("_ncfa").ToString();
-        if (!string.IsNullOrWhiteSpace(cookie)) return cookie;
+        Cookie cookie =  _webDriver.Manage().Cookies.GetCookieNamed("_ncfa");
+        if (cookie != null && !string.IsNullOrWhiteSpace(cookie.ToString())) 
+            return cookie.ToString();
         
         GoToPartyPage();
-        cookie =  _webDriver.Manage().Cookies.GetCookieNamed("_ncfa").ToString();
-        return cookie;
+        cookie =  _webDriver.Manage().Cookies.GetCookieNamed("_ncfa");
+        return cookie.ToString();
     }
 
     private string GetBuildId()
